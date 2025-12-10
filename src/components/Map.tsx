@@ -1,85 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { MapPin, Navigation, Key } from 'lucide-react';
+import { MapPin, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
 // Coordenadas exatas de Vitória, ES - Centro
-const VITORIA_COORDS: [number, number] = [-40.3128, -20.3155];
+const VITORIA_LAT = -20.3155;
+const VITORIA_LNG = -40.3128;
 
 const Map = () => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState(() => 
-    localStorage.getItem('mapbox_token') || ''
-  );
-  const [showTokenInput, setShowTokenInput] = useState(!mapboxToken);
-  const [tokenInput, setTokenInput] = useState('');
-
-  const handleSaveToken = () => {
-    if (tokenInput.trim()) {
-      localStorage.setItem('mapbox_token', tokenInput.trim());
-      setMapboxToken(tokenInput.trim());
-      setShowTokenInput(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
-
-    mapboxgl.accessToken = mapboxToken;
-
-    try {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/light-v11',
-        center: VITORIA_COORDS,
-        zoom: 13,
-        pitch: 45,
-      });
-
-      // Add navigation controls
-      map.current.addControl(
-        new mapboxgl.NavigationControl({
-          visualizePitch: true,
-        }),
-        'top-right'
-      );
-
-      // Add marker for Icemaq location
-      const marker = new mapboxgl.Marker({
-        color: '#007bff',
-      })
-        .setLngLat(VITORIA_COORDS)
-        .setPopup(
-          new mapboxgl.Popup({ offset: 25 }).setHTML(`
-            <div style="padding: 8px;">
-              <h3 style="font-weight: 600; margin-bottom: 4px;">Icemaq Refrigeração</h3>
-              <p style="color: #666; font-size: 14px;">Vitória, ES</p>
-            </div>
-          `)
-        )
-        .addTo(map.current);
-
-      // Open popup by default
-      marker.togglePopup();
-
-      // Add fullscreen control
-      map.current.addControl(new mapboxgl.FullscreenControl());
-
-      // Cleanup
-      return () => {
-        map.current?.remove();
-      };
-    } catch (error) {
-      console.error('Error initializing map:', error);
-      setShowTokenInput(true);
-      setMapboxToken('');
-      localStorage.removeItem('mapbox_token');
-    }
-  }, [mapboxToken]);
-
   return (
     <section id="mapa" className="section-padding bg-background">
       <div className="section-container">
@@ -98,77 +24,47 @@ const Map = () => {
 
         {/* Map Container */}
         <div className="relative rounded-3xl overflow-hidden shadow-xl animate-scale-in">
-          {showTokenInput ? (
-            <div className="aspect-[16/9] md:aspect-[21/9] bg-frost flex items-center justify-center">
-              <div className="bg-card p-8 rounded-2xl shadow-lg max-w-md w-full mx-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <Key className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Token Mapbox</h3>
-                    <p className="text-sm text-muted-foreground">Para visualizar o mapa interativo</p>
-                  </div>
+          {/* Google Maps Embed com coordenadas precisas */}
+          <div className="aspect-[16/9] md:aspect-[21/9]">
+            <iframe
+              src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3743.8!2d${VITORIA_LNG}!3d${VITORIA_LAT}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xb83d7c5e1ac7c5%3A0x76c2e4c8d3e24bdd!2sVit%C3%B3ria%2C%20ES!5e0!3m2!1spt-BR!2sbr!4v1702000000000!5m2!1spt-BR!2sbr&z=14`}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Localização Icemaq Refrigeração"
+              className="hover:opacity-90 transition-opacity duration-300"
+            />
+          </div>
+
+          {/* Info Card Overlay */}
+          <div className="absolute bottom-6 left-6 right-6 md:right-auto md:w-96">
+            <div className="bg-card/95 backdrop-blur-md rounded-2xl p-6 shadow-xl">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Obtenha seu token público gratuito em{' '}
-                  <a 
-                    href="https://mapbox.com" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    mapbox.com
-                  </a>
-                </p>
-                <div className="space-y-3">
-                  <Input
-                    type="text"
-                    placeholder="pk.eyJ1IjoiLi4u"
-                    value={tokenInput}
-                    onChange={(e) => setTokenInput(e.target.value)}
-                    className="w-full"
-                  />
-                  <Button onClick={handleSaveToken} className="w-full">
-                    Ativar Mapa
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground text-lg mb-1">Icemaq Refrigeração</h3>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Vitória, ES - Atendemos toda a Grande Vitória
+                  </p>
+                  <Button variant="default" size="sm" className="w-full" asChild>
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${VITORIA_LAT},${VITORIA_LNG}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Navigation className="w-4 h-4" />
+                      Como Chegar
+                    </a>
                   </Button>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="aspect-[16/9] md:aspect-[21/9]">
-              <div ref={mapContainer} className="absolute inset-0" />
-            </div>
-          )}
-
-          {/* Info Card Overlay */}
-          {!showTokenInput && (
-            <div className="absolute bottom-6 left-6 right-6 md:right-auto md:w-96">
-              <div className="bg-card/95 backdrop-blur-md rounded-2xl p-6 shadow-xl">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground text-lg mb-1">Icemaq Refrigeração</h3>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      Vitória, ES - Atendemos toda a Grande Vitória
-                    </p>
-                    <Button variant="default" size="sm" className="w-full" asChild>
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${VITORIA_COORDS[1]},${VITORIA_COORDS[0]}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Navigation className="w-4 h-4" />
-                        Como Chegar
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Service Areas */}
